@@ -32,7 +32,7 @@ export default function MockDashboard({ matchName, matchSnippet, matchUrl, txHas
   };
 
   return (
-    <section className="py-32 min-h-screen bg-black flex items-center justify-center relative overflow-hidden">
+    <section className="py-32 min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden">
       {/* Background with CSS radial gradient mesh and grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_80%,transparent_100%)]"></div>
       
@@ -48,7 +48,7 @@ export default function MockDashboard({ matchName, matchSnippet, matchUrl, txHas
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
         viewport={{ once: true }}
-        className="relative z-10 w-full max-w-6xl px-6 flex flex-col lg:flex-row gap-6"
+        className="relative z-10 w-full max-w-6xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-6"
       >
         {/* Main Match Card - Identity Dossier */}
         <div className="glass rounded-[2rem] p-8 lg:w-2/3 relative overflow-hidden shadow-[0_0_40px_rgba(255,255,255,0.03)] border-zinc-800/60">
@@ -177,51 +177,52 @@ export default function MockDashboard({ matchName, matchSnippet, matchUrl, txHas
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="relative z-10 w-full max-w-6xl px-6 mt-8"
+          className="relative z-10 w-full max-w-6xl mx-auto px-6 mt-8"
         >
-          <div className="flex items-center gap-3 mb-6">
-            <h3 className="text-zinc-400 text-sm font-bold tracking-[0.1em] uppercase">Alternate Matches</h3>
-            <div className="h-px bg-zinc-800/60 flex-1" />
-          </div>
+          <h3 className="text-xs tracking-widest text-white/50 mb-3 uppercase">Alternate Candidates</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {alternateMatches.map((alt, idx) => (
               <div 
                 key={idx} 
-                className="bg-white/5 border border-white/10 rounded-xl p-5 backdrop-blur-md hover:scale-[1.02] hover:bg-white/[0.07] transition-all duration-300 flex flex-col group"
+                className="flex flex-col justify-between p-4 rounded-xl bg-white/[0.04] border border-white/10 backdrop-blur-md hover:border-white/20 transition-all group"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-10 h-10 rounded-full bg-zinc-800 overflow-hidden border border-zinc-700 shrink-0">
-                    {alt.thumbnail ? (
-                      <img src={alt.thumbnail} alt={alt.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-500">
-                        <User className="w-4 h-4" />
-                      </div>
-                    )}
+                <div>
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-10 h-10 rounded-full bg-zinc-800 overflow-hidden border border-zinc-700 shrink-0">
+                      {alt.thumbnail ? (
+                        <img src={alt.thumbnail} alt={alt.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-500">
+                          <User className="w-4 h-4" />
+                        </div>
+                      )}
+                    </div>
+                    <div className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+                      alt.similarity_score >= 80 ? 'text-emerald-400 bg-emerald-400/10' : 
+                      alt.similarity_score >= 60 ? 'text-yellow-400 bg-yellow-400/10' : 
+                      'text-zinc-400 bg-zinc-800'
+                    }`}>
+                      {alt.similarity_score}% Match
+                    </div>
                   </div>
-                  <div className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shrink-0 ${
-                    alt.similarity_score >= 80 ? 'text-emerald-400 bg-emerald-400/10' : 
-                    alt.similarity_score >= 60 ? 'text-yellow-400 bg-yellow-400/10' : 
-                    'text-zinc-400 bg-zinc-800'
-                  }`}>
-                    {alt.similarity_score}% Match
-                  </div>
+                  
+                  {/* Content */}
+                  <h4 className="text-white font-medium text-sm line-clamp-1 mb-1" title={alt.title}>{alt.title}</h4>
+                  <p className="text-zinc-400 text-xs line-clamp-2 mb-4">
+                    {alt.snippet}
+                  </p>
                 </div>
                 
-                <h4 className="text-white font-medium text-sm truncate mb-1" title={alt.title}>{alt.title}</h4>
-                <p className="text-zinc-400 text-xs line-clamp-2 mb-4 flex-1">
-                  {alt.snippet}
-                </p>
-                
+                {/* Footer */}
                 <a 
                   href={alt.link} 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="w-full inline-flex items-center justify-center gap-1.5 text-zinc-300 hover:text-white bg-white/5 hover:bg-white/10 transition-colors text-[11px] font-bold uppercase tracking-wider py-2 rounded-lg border border-white/5 mt-auto"
+                  className="w-full py-1.5 text-xs text-center rounded-lg bg-white/5 hover:bg-white/10 text-white/80 transition-colors mt-auto inline-block"
                 >
-                  <ExternalLink className="w-3 h-3 group-hover:scale-110 transition-transform" />
-                  View Post
+                  View Source Post
                 </a>
               </div>
             ))}
