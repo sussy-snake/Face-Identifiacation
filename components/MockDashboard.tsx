@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, ExternalLink, Copy, User, Check, ShieldCheck, Hash, AlertTriangle, ChevronDown } from "lucide-react";
 import { useState } from "react";
 
@@ -27,9 +27,11 @@ export default function MockDashboard({ status = "exact_match", message, matchNa
   const [isFallbacksOpen, setIsFallbacksOpen] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(txHash);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (txHash) {
+      navigator.clipboard.writeText(txHash);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
