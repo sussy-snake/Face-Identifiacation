@@ -24,8 +24,9 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      // In a real environment, you'd point this to your actual API URL
-      const response = await fetch("http://localhost:8000/api/verify", {
+      // Use environment variable for the API URL, falling back to localhost for local dev
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/api/verify`, {
         method: "POST",
         body: formData,
       });
