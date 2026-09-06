@@ -8,20 +8,24 @@ import MockDashboard from "@/components/MockDashboard";
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [matchData, setMatchData] = useState<{
-    status: string;
-    message?: string;
-    matchName?: string;
-    matchSnippet?: string;
-    matchUrl?: string;
-    txHash?: string;
-    confidenceScore?: number;
-    fallbacks?: Array<{
+    primary_match?: {
+      title: string;
+      snippet: string;
+      link: string;
+      thumbnail: string;
+      similarity_score: number;
+    };
+    alternate_matches?: Array<{
       title: string;
       snippet: string;
       link: string;
       thumbnail: string;
       similarity_score: number;
     }>;
+    blockchain?: {
+      tx_hash: string;
+      data_hash: string;
+    };
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -78,16 +82,14 @@ export default function Home() {
         </div>
       )}
       <PipelineVisualizer isLoading={isLoading} />
-      {matchData && (
+      {matchData && matchData.primary_match && matchData.blockchain && (
         <MockDashboard
-          status={matchData.status}
-          message={matchData.message}
-          matchName={matchData.matchName}
-          matchSnippet={matchData.matchSnippet}
-          matchUrl={matchData.matchUrl}
-          txHash={matchData.txHash}
-          confidenceScore={matchData.confidenceScore}
-          fallbacks={matchData.fallbacks}
+          matchName={matchData.primary_match.title}
+          matchSnippet={matchData.primary_match.snippet}
+          matchUrl={matchData.primary_match.link}
+          txHash={matchData.blockchain.tx_hash}
+          confidenceScore={matchData.primary_match.similarity_score}
+          alternateMatches={matchData.alternate_matches}
           uploadedImage={uploadedImage}
         />
       )}

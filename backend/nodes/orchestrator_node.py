@@ -24,41 +24,30 @@ class OrchestratorNode:
         # Step 2: OSINT Analysis
         candidates = await self.osint_node.analyze(image_path)
         
-        # Step 3: Facial Similarity Threshold Verification
-        best_match = None
-        best_score = 0
-        fallbacks = []
-
+        # Step 3: Face Comparison & Ranking
+        scored_candidates = []
         for candidate in candidates:
             score = await self.vision_node.compare_faces(image_path, candidate.get("link", ""))
+            scored_candidates.append({**candidate, "similarity_score": round(score, 1)})
             
-            # Format candidate with its score
-            scored_candidate = {**candidate, "similarity_score": round(score, 1)}
-            
-            if score >= 80:
-                if score > best_score:
-                    best_score = score
-                    best_match = scored_candidate
-            else:
-                fallbacks.append(scored_candidate)
+        # Sort descending by similarity score
+        scored_candidates.sort(key=lambda x: x["similarity_score"], reverse=True)
+        
+        primary_match = scored_candidates[0] if scored_candidates else None
+        alternate_matches = scored_candidates[1:] if len(scored_candidates) > 1 else []
 
-        # Step 4: Conditional Routing
-        if best_match:
-            # Exact Match -> Proceed to Blockchain Storage
-            storage_result = await self.storage_node.save(best_match)
-            return {
-                "status": "exact_match",
-                "matchName": best_match["title"],
-                "matchSnippet": best_match.get("snippet", "No caption available"),
-                "matchUrl": best_match["link"],
-                "txHash": storage_result["txHash"],
-                "dataHash": storage_result["dataHash"],
-                "confidenceScore": best_match["similarity_score"]
+        # Step 4: Blockchain Storage
+        # We now proceed with minting the primary match regardless of exact score threshold
+        storage_result = None
+        if primary_match:
+            storage_result = await self.storage_node.save(primary_match)
+            
+        # Compile response
+        return {
+            "primary_match": primary_match,
+            "alternate_matches": alternate_matches,
+            "blockchain": {
+                "tx_hash": storage_result["txHash"] if storage_result else "0x000...",
+                "data_hash": storage_result["dataHash"] if storage_result else "0x000..."
             }
-        else:
-            # Partial Match -> Do not mint to blockchain, return fallbacks
-            return {
-                "status": "partial_match",
-                "message": "Couldn't find the exact data.",
-                "fallbacks": fallbacks[:3] # Top 3 background/scenery matches
-            }
+        }
