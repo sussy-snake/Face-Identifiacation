@@ -31,7 +31,13 @@ class StorageNode:
         """
         Packs the match data into a SHA-256 hash.
         """
-        data_to_hash = f"{match_data['title']}_{match_data['link']}_{time.time()}"
+        import json
+        data_to_hash = json.dumps({
+            "title": match_data.get("title", ""),
+            "snippet": match_data.get("snippet", ""),
+            "link": match_data.get("link", ""),
+            "timestamp": time.time()
+        }, sort_keys=True)
         hash_object = hashlib.sha256(data_to_hash.encode())
         return hash_object.hexdigest()
 

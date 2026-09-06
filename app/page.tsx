@@ -8,17 +8,32 @@ import MockDashboard from "@/components/MockDashboard";
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [matchData, setMatchData] = useState<{
-    matchName: string;
-    matchUrl: string;
-    txHash: string;
-    confidenceScore: number;
+    status: string;
+    message?: string;
+    matchName?: string;
+    matchSnippet?: string;
+    matchUrl?: string;
+    txHash?: string;
+    confidenceScore?: number;
+    fallbacks?: Array<{
+      title: string;
+      snippet: string;
+      link: string;
+      thumbnail: string;
+      similarity_score: number;
+    }>;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
   const handleUpload = async (file: File) => {
     setIsLoading(true);
     setError(null);
     setMatchData(null);
+    
+    // Create local preview URL
+    const imageUrl = URL.createObjectURL(file);
+    setUploadedImage(imageUrl);
 
     const formData = new FormData();
     formData.append("file", file);
@@ -37,12 +52,7 @@ export default function Home() {
       }
 
       const data = await response.json();
-      setMatchData({
-        matchName: data.matchName,
-        matchUrl: data.matchUrl,
-        txHash: data.txHash,
-        confidenceScore: data.confidenceScore,
-      });
+      setMatchData(data);
 
       // Scroll to dashboard after successful scan
       setTimeout(() => {
@@ -70,10 +80,15 @@ export default function Home() {
       <PipelineVisualizer isLoading={isLoading} />
       {matchData && (
         <MockDashboard
+          status={matchData.status}
+          message={matchData.message}
           matchName={matchData.matchName}
+          matchSnippet={matchData.matchSnippet}
           matchUrl={matchData.matchUrl}
           txHash={matchData.txHash}
           confidenceScore={matchData.confidenceScore}
+          fallbacks={matchData.fallbacks}
+          uploadedImage={uploadedImage}
         />
       )}
     </main>

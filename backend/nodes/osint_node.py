@@ -39,32 +39,46 @@ class OsintNode:
         data = response.json()
         
         if "visual_matches" in data and len(data["visual_matches"]) > 0:
-            best_match = data["visual_matches"][0]
-            return {
-                "title": best_match.get("title", "Unknown"),
-                "link": best_match.get("link", ""),
-                "thumbnail": best_match.get("thumbnail", "")
-            }
-        return None
+            candidates = []
+            for match in data["visual_matches"][:5]:
+                candidates.append({
+                    "title": match.get("title", "Unknown"),
+                    "snippet": match.get("snippet", "No caption available"),
+                    "link": match.get("link", "N/A"),
+                    "thumbnail": match.get("thumbnail", "")
+                })
+            return candidates
+        return []
 
-    async def analyze(self, image_path: str) -> dict:
+    async def analyze(self, image_path: str) -> list:
         """
         Executes the OSINT pipeline: Uploads image and searches SerpApi.
+        Returns a list of candidate dictionaries.
         """
         try:
             image_url = self.upload_to_imgbb(image_path)
-            match_data = self.search_serpapi(image_url)
-            if not match_data:
-                match_data = {
+            candidates = self.search_serpapi(image_url)
+            if not candidates:
+                candidates = [{
                     "title": "Unknown Person",
+                    "snippet": "No caption available",
                     "link": "N/A",
                     "thumbnail": ""
-                }
-            return match_data
+                }]
+            return candidates
         except Exception as e:
             print(f"OsintNode: External API failed (ImgBB/SerpApi), falling back to mock: {e}")
-            return {
-                "title": "Alex_Doe_99 (Mocked Fallback)",
-                "link": "https://example.com/alex_doe",
-                "thumbnail": ""
-            }
+            return [
+                {
+                    "title": "Alex_Doe_99 (Mocked Exact Match)",
+                    "snippet": "Spotted at the Web3 summit talking about decentralized identity protocols.",
+                    "link": "https://example.com/alex_doe",
+                    "thumbnail": ""
+                },
+                {
+                    "title": "Generic Conference Attendee",
+                    "snippet": "Background shot of the main stage",
+                    "link": "https://example.com/conference",
+                    "thumbnail": ""
+                }
+            ]
