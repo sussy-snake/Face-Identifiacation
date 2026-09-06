@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Face-to-Chain AI Swarm
 
-## Getting Started
+Face-to-Chain is an advanced pipeline that utilizes an AI Swarm architecture to process facial images, perform OSINT analysis, and securely store the resulting verified identity hashes on the Ethereum Sepolia blockchain.
 
-First, run the development server:
+## Project Architecture
 
+The project is divided into two main components:
+1. **Frontend (Next.js)**: A sleek, interactive UI that allows users to upload images and visualize the real-time processing of the AI Swarm.
+2. **Backend (Python FastAPI)**: A high-performance API server that orchestrates the AI Swarm nodes and handles the complex logic of image processing, OSINT search, and blockchain interaction.
+
+## AI Swarm Breakdown
+
+The backend utilizes an orchestrator node that delegates tasks to specialized sub-nodes:
+- **Orchestrator Node (`orchestrator_node.py`)**: The central hub that routes data between the Vision, OSINT, and Storage nodes.
+- **Vision Node (`vision_node.py`)**: Dedicated to handling the facial recognition pipeline, verifying that a face is present in the uploaded image.
+- **OSINT Node (`osint_node.py`)**: Takes the raw image, uploads it to ImgBB for hosting, and uses SerpApi (Google Lens) to find the most accurate visual matches across the web.
+- **Storage Node (`storage_node.py`)**: Packs the metadata (match title, URL, timestamp) into a SHA-256 hash and securely stores it on the Sepolia blockchain using Web3.
+
+## Web Animation Stack
+
+The frontend is built with a powerful animation stack to provide a smooth, engaging user experience:
+- **[Framer Motion](https://www.framer.com/motion/)**: Used for declarative animations and layout transitions.
+- **[GSAP](https://gsap.com/)**: Leveraged for complex, high-performance timeline animations.
+- **[Lenis](https://lenis.studiofreight.com/)**: Provides smooth, modern scrolling capabilities.
+- **[Tailwind CSS](https://tailwindcss.com/)**: Utility-first CSS framework for rapid styling.
+
+## Local Setup Instructions
+
+### Prerequisites
+- Node.js (v18+)
+- Python (3.10+)
+- MetaMask (or another Web3 wallet) configured for the Sepolia Testnet.
+
+### 1. Clone the repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <your-repo-url>
+cd face-to-chain
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Frontend Setup
+```bash
+npm install
+npm run dev
+```
+The frontend will be available at `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Backend Setup
+Open a new terminal and navigate to the backend directory:
+```bash
+cd backend
+pip install -r requirements.txt
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a `.env` file in the `backend` directory with the following keys:
+```env
+SERPAPI_KEY=your_serpapi_key
+WEB3_PROVIDER_URI=your_alchemy_or_infura_sepolia_url
+PRIVATE_KEY=your_wallet_private_key
+IMGBB_KEY=your_imgbb_key
+CONTRACT_ADDRESS=0xecBfb6079DB27D1308B29771c8862C842f084dD9
+```
 
-## Learn More
+Run the backend server:
+```bash
+python main.py
+```
+The API will be available at `http://localhost:8000`.
 
-To learn more about Next.js, take a look at the following resources:
+## Sepolia Contract Address
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The identity verification smart contract is deployed on the Ethereum Sepolia Testnet at the following address:
+**`0xecBfb6079DB27D1308B29771c8862C842f084dD9`**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+You can view the stored transactions on a Sepolia block explorer.
