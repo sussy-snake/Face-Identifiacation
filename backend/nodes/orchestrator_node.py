@@ -35,12 +35,17 @@ class OrchestratorNode:
             
             for candidate in candidates:
                 try:
-                    # Pass the thumbnail to compare_faces, not the page link
-                    raw_distance = await self.vision_node.compare_faces(crop_path, candidate.get("thumbnail", candidate.get("link", "")))
+                    # Pass the full candidate dict so VisionNode can extract thumbnail, title, and link for accurate fallback
+                    raw_distance = await self.vision_node.compare_faces(crop_path, candidate)
                     
-                    # True Cosine Distance to Percentage Formula
-                    # distance ranges from 0.0 (identical) to ~1.0. Score ranges from 100% to 0%
-                    similarity_score = max(0.0, min(100.0, (1.0 - raw_distance) * 100))
+                    # True Cosine Distance to Percentage Formula (ArcFace threshold is ~0.68)
+                    # We map distance 0.0 -> 100%, 0.68 -> 80%, 1.0 -> 0%
+                    if raw_distance <= 0.68:
+                        similarity_score = 100.0 - (raw_distance / 0.68) * 20.0
+                    else:
+                        similarity_score = 80.0 - ((raw_distance - 0.68) / 0.32) * 80.0
+                        
+                    similarity_score = max(0.0, min(100.0, similarity_score))
                     
                     print(f"[RE-RANK] Candidate: {candidate.get('title')} | Raw Distance: {raw_distance:.4f} | Calculated Score: {similarity_score:.1f}%")
                     
@@ -53,12 +58,12 @@ class OrchestratorNode:
             # We extract identity from the original candidate list so we can use it as a tie-breaker
             extracted_identity = await self.ai_swarm_node.extract_identity(candidates)
 
-            # Tie-Breaker: Boost score if the candidate title contains the extracted identity AND is a verified domain
+            # Tie-Breaker: Massive boost if candidate title matches the verified extracted identity
             for cand in scored_candidates:
                 if extracted_identity and extracted_identity.lower() in cand.get("title", "").lower():
                     if "linkedin.com" in cand.get("link", "") or "instagram.com" in cand.get("link", "") or "wikipedia.org" in cand.get("link", ""):
-                        print(f"[TIE-BREAKER] Boosting {cand.get('title')} (+5% for Verified Profile Match)")
-                        cand["similarity_score"] = min(100.0, cand["similarity_score"] + 5.0)
+                        print(f"[TIE-BREAKER] Boosting {cand.get('title')} (+15% for Verified Profile Match)")
+                        cand["similarity_score"] = min(100.0, cand["similarity_score"] + 15.0)
 
             # Biometric Re-ranking: Strict sort descending by facial similarity score
             scored_candidates.sort(key=lambda x: x["similarity_score"], reverse=True)
