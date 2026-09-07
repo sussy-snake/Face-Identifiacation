@@ -43,16 +43,26 @@ class AiSwarmNode:
             except Exception as e:
                 print(f"[AI Swarm] LLM API failed or missing dependency: {e}. Falling back to smart parser.")
         
-        # Fallback heuristic: Extract the most likely name from the best candidate's title
-        best_candidate = candidates[0]
-        title = best_candidate.get("title", "")
+        # Fallback heuristic: Extract the most common Proper Noun (2 capitalized words) across all candidates
+        import re
+        from collections import Counter
         
-        # Clean common suffixes like " - Wikipedia", " | LinkedIn", " (@username)"
-        clean_title = title.split(" - ")[0].split(" | ")[0].split(" (")[0]
-        
-        # If title is very long, just return the first two words (rough name heuristic)
-        words = clean_title.split()
-        if len(words) > 4:
-            clean_title = " ".join(words[:2])
+        text_corpus = ""
+        for cand in candidates:
+            text_corpus += cand.get("title", "") + " " + cand.get("snippet", "") + " "
             
-        return clean_title
+        # Find all sequences of two Capitalized words (e.g., "Charles Leclerc", "Aarav Goel")
+        matches = re.findall(r'\b[A-Z][a-z]+\s[A-Z][a-z]+\b', text_corpus)
+        
+        # Filter out extremely generic false positives
+        stop_words = ["Wikipedia", "LinkedIn", "Instagram", "Facebook", "Twitter", "Profile", "Photos", "Images", "Home", "Posts", "Sign In", "Log In", "News", "Sportskeeda Pit", "Getty Images"]
+        valid_matches = [m for m in matches if m not in stop_words]
+        
+        if valid_matches:
+            most_common = Counter(valid_matches).most_common(1)[0][0]
+            return most_common
+            
+        # Absolute fallback if regex fails
+        best_title = candidates[0].get("title", "")
+        clean_title = best_title.split(" - ")[0].split(" | ")[0]
+        return " ".join(clean_title.split()[:2])

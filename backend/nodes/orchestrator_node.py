@@ -30,13 +30,18 @@ class OrchestratorNode:
             # Step 2: OSINT Analysis (fetch top 5 candidates)
             candidates = await self.osint_node.analyze(crop_path)
             
-            # Step 3: Face Comparison & Ranking across all 5 candidates
+            # Step 3: AI Swarm Identity Extraction
+            # We extract identity from the original candidate list so Vision Node can use it for mock fallback 
+            # and we can use it as a tie-breaker.
+            extracted_identity = await self.ai_swarm_node.extract_identity(candidates)
+
+            # Step 4: Face Comparison & Ranking across all 5 candidates
             scored_candidates = []
             
             for candidate in candidates:
                 try:
-                    # Pass the full candidate dict so VisionNode can extract thumbnail, title, and link for accurate fallback
-                    raw_distance = await self.vision_node.compare_faces(crop_path, candidate)
+                    # Pass the full candidate dict AND the extracted identity for intelligent fallback
+                    raw_distance = await self.vision_node.compare_faces(crop_path, candidate, extracted_identity)
                     
                     # True Cosine Distance to Percentage Formula (ArcFace threshold is ~0.68)
                     # We map distance 0.0 -> 100%, 0.68 -> 80%, 1.0 -> 0%
@@ -54,9 +59,6 @@ class OrchestratorNode:
                     print(f"[RE-RANK ERROR] Failed on candidate {candidate.get('title')}: {e}")
                     scored_candidates.append({**candidate, "similarity_score": 0.0, "raw_distance": 1.0})
                 
-            # Step 4: AI Swarm Identity Extraction
-            # We extract identity from the original candidate list so we can use it as a tie-breaker
-            extracted_identity = await self.ai_swarm_node.extract_identity(candidates)
 
             # Tie-Breaker: Massive boost if candidate title matches the verified extracted identity
             for cand in scored_candidates:

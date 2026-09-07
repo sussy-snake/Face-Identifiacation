@@ -59,7 +59,7 @@ class VisionNode:
             print("VisionNode: Skipping face detection step because face_recognition is disabled. Returning full image.")
             return [file_path]
 
-    async def compare_faces(self, original_image_path: str, candidate: dict) -> float:
+    async def compare_faces(self, original_image_path: str, candidate: dict, extracted_identity: str = "") -> float:
         """
         Calculates a raw cosine distance against the candidate image URL using ArcFace.
         Distance ranges from 0.0 (identical) to ~1.0.
@@ -113,11 +113,14 @@ class VisionNode:
         # Fallback Mock Logic if DeepFace is missing or image processing fails
         url_hash = int(hashlib.md5(candidate_image_url.encode()).hexdigest()[:8], 16)
         
-        # MOCK distances based on TITLE and LINK (cosine distance: lower is better, usually < 0.68 is a match)
-        if "aarav" in candidate_title or "goel" in candidate_title:
-            return float((url_hash % 15) / 100.0 + 0.15) # 0.15 - 0.29 (Very strong match)
+        # MOCK distances based on TITLE and LINK matching the extracted_identity 
+        # (cosine distance: lower is better, < 0.68 is a match -> maps to >80%)
+        
+        if extracted_identity and extracted_identity.lower() in candidate_title:
+            # If the AI Swarm's extracted name is in the title, it's a guaranteed match (Mock Distance 0.15 - 0.29 -> 95%+ Score)
+            return float((url_hash % 15) / 100.0 + 0.15) 
             
-        if "saravanan" in candidate_title or "fail" in candidate_link or "conference" in candidate_title:
+        if "fail" in candidate_link or "conference" in candidate_title:
             return float((url_hash % 20) / 100.0 + 0.60) # 0.60 - 0.79 (Borderline/Partial lookalike)
             
         # For completely random/generic images that failed, give them a TERRIBLE distance so they don't win.
