@@ -1,74 +1,57 @@
-# Face-to-Chain AI Swarm
+# 🌐 Face-to-Chain: Identity Verification Pipeline
 
-Face-to-Chain is an advanced pipeline that utilizes an AI Swarm architecture to process facial images, perform OSINT analysis, and securely store the resulting verified identity hashes on the Ethereum Sepolia blockchain.
+An end-to-end pipeline that takes a face scan as input, genuinely searches the web for matching social media identities using reverse-image search, verifies the biometric match, and anchors the discovered data to the Ethereum blockchain for tamper-evident verification.
 
-## Project Architecture
+Built for the **HH Goa 2026 Shortlisting Task 3**.
 
-The project is divided into two main components:
-1. **Frontend (Next.js)**: A sleek, interactive UI that allows users to upload images and visualize the real-time processing of the AI Swarm.
-2. **Backend (Python FastAPI)**: A high-performance API server that orchestrates the AI Swarm nodes and handles the complex logic of image processing, OSINT search, and blockchain interaction.
+---
 
-## AI Swarm Breakdown
+## 🚀 What the Project Does
 
-The backend utilizes an orchestrator node that delegates tasks to specialized sub-nodes:
-- **Orchestrator Node (`orchestrator_node.py`)**: The central hub that routes data between the Vision, OSINT, and Storage nodes.
-- **Vision Node (`vision_node.py`)**: Dedicated to handling the facial recognition pipeline, verifying that a face is present in the uploaded image.
-- **OSINT Node (`osint_node.py`)**: Takes the raw image, uploads it to ImgBB for hosting, and uses SerpApi (Google Lens) to find the most accurate visual matches across the web.
-- **Storage Node (`storage_node.py`)**: Packs the metadata (match title, URL, timestamp) into a SHA-256 hash and securely stores it on the Sepolia blockchain using Web3.
+This pipeline completely fulfills the "Face scan -> Web search -> Blockchain verification" requirement:
+1. **Face Identification:** Detects and encodes an input face using OpenCV Haar Cascades and ORB Feature Extraction (optimized to run entirely in lightweight cloud environments without heavy TensorFlow dependencies).
+2. **Web & Social Media Search:** Performs a **genuine, live reverse-image search** using Google Lens (via SerpApi) to discover matching social media posts and identities across the web. **No hardcoded results.**
+3. **Blockchain Anchoring:** Once an identity is algorithmically verified via a Hybrid OSINT-Visual Consensus Matrix, the subject's identity metadata is cryptographically hashed and minted directly to the **Ethereum Sepolia Testnet** using Web3.py.
 
-## Web Animation Stack
+We went above and beyond the requirements by wrapping this powerful Python pipeline in a stunning, cinematic Next.js frontend hosted on Cloudflare Pages, with the backend served via Render.
 
-The frontend is built with a powerful animation stack to provide a smooth, engaging user experience:
-- **[Framer Motion](https://www.framer.com/motion/)**: Used for declarative animations and layout transitions.
-- **[GSAP](https://gsap.com/)**: Leveraged for complex, high-performance timeline animations.
-- **[Lenis](https://lenis.studiofreight.com/)**: Provides smooth, modern scrolling capabilities.
-- **[Tailwind CSS](https://tailwindcss.com/)**: Utility-first CSS framework for rapid styling.
+---
 
-## Local Setup Instructions
+## 🛠️ How to Run It
 
 ### Prerequisites
-- Node.js (v18+)
-- Python (3.10+)
-- MetaMask (or another Web3 wallet) configured for the Sepolia Testnet.
+* Python 3.10+
+* Node.js 18+
+* API Keys required: `SERPAPI_KEY` (Google Lens), `IMGBB_KEY` (Temporary image hosting for search), `ALCHEMY_SEPOLIA_ENDPOINT` (Blockchain RPC), `METAMASK_PRIVATE_KEY` (Wallet for gas fees).
 
-### 1. Clone the repository
-```bash
-git clone <your-repo-url>
-cd face-to-chain
-```
-
-### 2. Frontend Setup
-```bash
-npm install
-npm run dev
-```
-The frontend will be available at `http://localhost:3000`.
-
-### 3. Backend Setup
-Open a new terminal and navigate to the backend directory:
+### 1. Run the FastAPI Backend
 ```bash
 cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
 pip install -r requirements.txt
+# Create a .env file with your API keys here
+uvicorn main:app --reload
 ```
 
-Create a `.env` file in the `backend` directory with the following keys:
-```env
-SERPAPI_KEY=your_serpapi_key
-WEB3_PROVIDER_URI=your_alchemy_or_infura_sepolia_url
-PRIVATE_KEY=your_wallet_private_key
-IMGBB_KEY=your_imgbb_key
-CONTRACT_ADDRESS=0xecBfb6079DB27D1308B29771c8862C842f084dD9
-```
-
-Run the backend server:
+### 2. Run the Next.js Frontend
 ```bash
-python main.py
+cd face-to-chain
+npm install
+# Set NEXT_PUBLIC_API_URL=http://localhost:8000 in your .env.local
+npm run dev
 ```
-The API will be available at `http://localhost:8000`.
 
-## Sepolia Contract Address
+---
 
-The identity verification smart contract is deployed on the Ethereum Sepolia Testnet at the following address:
-**`0xecBfb6079DB27D1308B29771c8862C842f084dD9`**
+## 🔗 Which Blockchain We Used
 
-You can view the stored transactions on a Sepolia block explorer.
+We used the **Ethereum Sepolia Testnet**. 
+The backend utilizes `web3.py` to communicate with the Sepolia network via an Alchemy RPC endpoint. When a match is verified, a SHA-256 hash of the extracted identity data is sent as a transaction payload to the Sepolia chain. The resulting `TX_HASH` is displayed on the frontend, allowing judges to click it and view the immutable, tamper-evident record directly on **Sepolia Etherscan**.
+
+---
+
+## ⚠️ Known Limitations
+
+* **Hardware/Memory Constraints:** Because standard deep-learning models (like `DeepFace` / `TensorFlow`) require 1GB+ of RAM, they crash on free-tier Render instances (512MB RAM). We engineered around this by building a custom **Hybrid OSINT-Visual Consensus Matrix**. It uses extremely lightweight OpenCV ORB mathematics and text-metadata consensus to verify identities. While incredibly efficient, it relies heavily on OSINT consensus, meaning heavily obscured faces or individuals with zero internet presence may be rejected or heavily penalized by the matrix.
+* **Thumbnail Resolutions:** Google Lens occasionally returns highly compressed thumbnails, which can cause OpenCV Haar Cascades to fail on the visual extraction step. The system gracefully degrades to semantic text-matching if visual geometry fails.
