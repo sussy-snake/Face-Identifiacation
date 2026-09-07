@@ -5,6 +5,7 @@ import { CheckCircle, ExternalLink, Copy, User, Check, ShieldCheck, Hash, AlertT
 import { useState } from "react";
 
 interface DashboardProps {
+  extractedIdentity?: string;
   matchName?: string;
   matchSnippet?: string;
   matchUrl?: string;
@@ -20,7 +21,7 @@ interface DashboardProps {
   }>;
 }
 
-export default function MockDashboard({ matchName, matchSnippet, matchUrl, txHash, confidenceScore, uploadedImage, alternateMatches }: DashboardProps) {
+export default function MockDashboard({ extractedIdentity, matchName, matchSnippet, matchUrl, txHash, confidenceScore, uploadedImage, alternateMatches }: DashboardProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -78,6 +79,20 @@ export default function MockDashboard({ matchName, matchSnippet, matchUrl, txHas
 
               <div className="rounded-3xl border border-zinc-800/60 bg-black/40 p-7 space-y-6">
                 
+                {extractedIdentity && (
+                  <>
+                    <div className="flex flex-col items-start pb-4 border-b border-zinc-800/60">
+                      <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+                        AI Swarm Extraction
+                      </span>
+                      <h3 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 tracking-tight drop-shadow-[0_0_15px_rgba(96,165,250,0.3)] uppercase">
+                        VERIFIED SUBJECT: {extractedIdentity}
+                      </h3>
+                    </div>
+                  </>
+                )}
+
                 {/* Account Name */}
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center border border-yellow-500/20 shrink-0">
