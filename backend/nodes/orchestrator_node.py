@@ -35,13 +35,20 @@ class OrchestratorNode:
             # and we can use it as a tie-breaker.
             extracted_identity = await self.ai_swarm_node.extract_identity(candidates)
 
+            # Calculate Consensus: If the person has "less data", Google Lens returns random lookalikes 
+            # with different names. If the name only appears once, confidence should be artificially capped.
+            consensus_count = sum(
+                1 for c in candidates 
+                if extracted_identity and extracted_identity.lower() in (c.get("title", "") + " " + c.get("snippet", "")).lower()
+            )
+
             # Step 4: Face Comparison & Ranking across all 5 candidates
             scored_candidates = []
             
             for candidate in candidates:
                 try:
-                    # Pass the full candidate dict AND the extracted identity for intelligent fallback
-                    raw_distance = await self.vision_node.compare_faces(crop_path, candidate, extracted_identity)
+                    # Pass the full candidate dict, the extracted identity, and consensus_count for intelligent fallback
+                    raw_distance = await self.vision_node.compare_faces(crop_path, candidate, extracted_identity, consensus_count)
                     
                     # True Cosine Distance to Percentage Formula (ArcFace threshold is ~0.68)
                     # We map distance 0.0 -> 100%, 0.68 -> 80%, 1.0 -> 0%
