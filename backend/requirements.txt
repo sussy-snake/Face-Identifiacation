@@ -6,6 +6,3 @@ google-search-results
 py-solc-x
 python-dotenv
 requests
-deepface
-tf-keras
-opencv-python-headless
