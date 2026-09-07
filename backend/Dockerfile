@@ -22,8 +22,8 @@ RUN pip install --no-cache-dir deepface tf-keras opencv-python-headless
 # Copy the rest of the backend files
 COPY . .
 
-# Hugging Face Spaces strictly routes traffic to port 7860
-EXPOSE 7860
+# Google Cloud Run dynamically assigns a port via the PORT environment variable (defaults to 8080)
+EXPOSE 8080
 
-# Start the FastAPI server
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Start the FastAPI server using the dynamic PORT variable
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
