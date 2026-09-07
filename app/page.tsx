@@ -7,7 +7,7 @@ import MockDashboard from "@/components/MockDashboard";
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
-  const [matchData, setMatchData] = useState<{
+  const [matchData, setMatchData] = useState<Array<{
     extracted_identity?: string;
     primary_match?: {
       title: string;
@@ -27,7 +27,7 @@ export default function Home() {
       tx_hash: string;
       data_hash: string;
     };
-  } | null>(null);
+  }> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
@@ -78,7 +78,10 @@ export default function Home() {
       }
 
       const data = await response.json();
-      setMatchData(data);
+      
+      // Ensure data is always treated as an array for the new multi-face payload
+      const dataArray = Array.isArray(data) ? data : [data];
+      setMatchData(dataArray);
 
       // Result Transition: Permanently unlock and scroll to dossier
       setTimeout(() => {
@@ -113,18 +116,24 @@ export default function Home() {
       </div>
 
       <div id="dashboard-section">
-        {matchData && matchData.primary_match && matchData.blockchain && (
-          <MockDashboard
-            extractedIdentity={matchData.extracted_identity}
-            matchName={matchData.primary_match.title}
-            matchSnippet={matchData.primary_match.snippet}
-            matchUrl={matchData.primary_match.link}
-            txHash={matchData.blockchain.tx_hash}
-            confidenceScore={matchData.primary_match.similarity_score}
-            alternateMatches={matchData.alternate_matches}
-            uploadedImage={uploadedImage}
-          />
-        )}
+        {matchData && matchData.map((data, index) => (
+          <div key={index}>
+            {index > 0 && <hr className="border-white/10 my-12 max-w-6xl mx-auto" />}
+            {data.primary_match && data.blockchain && (
+              <MockDashboard
+                extractedIdentity={data.extracted_identity}
+                matchName={data.primary_match.title}
+                matchSnippet={data.primary_match.snippet}
+                matchUrl={data.primary_match.link}
+                txHash={data.blockchain.tx_hash}
+                confidenceScore={data.primary_match.similarity_score}
+                alternateMatches={data.alternate_matches}
+                uploadedImage={uploadedImage}
+                primaryThumbnail={data.primary_match.thumbnail}
+              />
+            )}
+          </div>
+        ))}
       </div>
     </main>
   );

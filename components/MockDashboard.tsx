@@ -12,6 +12,7 @@ interface DashboardProps {
   txHash?: string;
   confidenceScore?: number;
   uploadedImage?: string | null;
+  primaryThumbnail?: string;
   alternateMatches?: Array<{
     title: string;
     snippet: string;
@@ -21,7 +22,7 @@ interface DashboardProps {
   }>;
 }
 
-export default function MockDashboard({ extractedIdentity, matchName, matchSnippet, matchUrl, txHash, confidenceScore, uploadedImage, alternateMatches }: DashboardProps) {
+export default function MockDashboard({ extractedIdentity, matchName, matchSnippet, matchUrl, txHash, confidenceScore, uploadedImage, primaryThumbnail, alternateMatches }: DashboardProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -60,11 +61,16 @@ export default function MockDashboard({ extractedIdentity, matchName, matchSnipp
             <div className="shrink-0 flex flex-col items-center md:items-start pt-2">
               <div className="w-36 h-36 rounded-full border-[1px] border-zinc-700 bg-zinc-900/80 flex items-center justify-center shadow-2xl relative overflow-hidden">
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 mix-blend-overlay"></div>
-                {uploadedImage ? (
-                  <img src={uploadedImage} alt="Scanned Face" className="w-full h-full object-cover rounded-full relative z-10" />
+                {primaryThumbnail ? (
+                  <img src={primaryThumbnail} alt="Matched Profile" className="w-full h-full object-cover rounded-full relative z-10" />
+                ) : uploadedImage ? (
+                  <img src={uploadedImage} alt="Scanned Face fallback" className="w-full h-full object-cover rounded-full relative z-10" />
                 ) : (
-                  <ShieldCheck className="w-14 h-14 text-zinc-600 relative z-10" />
+                  <User className="w-12 h-12 text-zinc-600 relative z-10" />
                 )}
+                
+                {/* Scanning reticle effect overlay */}
+                <div className="absolute inset-0 rounded-full border-2 border-emerald-500/0 animate-[pulse_3s_ease-in-out_infinite] z-20"></div>
               </div>
             </div>
 
@@ -81,12 +87,12 @@ export default function MockDashboard({ extractedIdentity, matchName, matchSnipp
                 
                 {extractedIdentity && (
                   <>
-                    <div className="flex flex-col items-start pb-4 border-b border-zinc-800/60">
+                    <div className="flex flex-col items-start pb-4 border-b border-zinc-800/60 w-full overflow-hidden">
                       <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
                         AI Swarm Extraction
                       </span>
-                      <h3 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 tracking-tight drop-shadow-[0_0_15px_rgba(96,165,250,0.3)] uppercase">
+                      <h3 className="text-lg md:text-xl font-semibold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 drop-shadow-[0_0_15px_rgba(96,165,250,0.3)] uppercase break-words line-clamp-2 w-full">
                         VERIFIED SUBJECT: {extractedIdentity}
                       </h3>
                     </div>
@@ -151,13 +157,20 @@ export default function MockDashboard({ extractedIdentity, matchName, matchSnipp
           <div className="relative z-10 flex flex-col h-full">
             <h3 className="text-zinc-500 text-[11px] font-bold tracking-[0.2em] uppercase mb-8">Network Status</h3>
             
-            <div className="flex items-center gap-4 mb-10">
+            <div className="flex items-center gap-4 mb-6">
               <div className="relative flex items-center justify-center w-5 h-5 shrink-0">
                 <div className="absolute w-full h-full bg-emerald-500 rounded-full animate-ping opacity-60"></div>
                 <div className="relative w-2.5 h-2.5 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.8)]"></div>
               </div>
               <span className="text-white font-bold text-xl tracking-tight">Verified on Sepolia</span>
             </div>
+            
+            {uploadedImage && (
+              <div className="flex flex-col items-center justify-center mb-8">
+                <img src={uploadedImage} alt="Input Face Scan" className="w-20 h-20 mx-auto rounded-xl object-cover border border-white/20 shadow-inner my-3" />
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Input Face Scan</span>
+              </div>
+            )}
             
             <div className="bg-black/50 rounded-2xl border border-zinc-800/80 p-5 mb-8 mt-auto">
               <div className="flex items-center justify-between mb-4">
