@@ -55,6 +55,10 @@ class VisionNode:
                 raise
             except Exception as e:
                 raise HTTPException(status_code=400, detail=f"Face detection failed: {str(e)}")
+        else:
+            print("VisionNode: Skipping face detection step because face_recognition is disabled. Returning full image.")
+            return [file_path]
+
     async def compare_faces(self, original_image_path: str, candidate: dict) -> float:
         """
         Calculates a raw cosine distance against the candidate image URL using ArcFace.
