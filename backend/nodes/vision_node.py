@@ -110,24 +110,70 @@ class VisionNode:
             except Exception as e:
                 print(f"[VisionNode] DeepFace verification failed for {candidate_title}: {e}. Falling back to deterministic mock distance.")
             
-        # Fallback Mock Logic if DeepFace is missing or image processing fails
+        # --- LIGHTWEIGHT MATHEMATICAL BIOMETRICS (NO TENSORFLOW REQUIRED) ---
+        # If DeepFace fails (e.g. OOM on free tier), we use a purely mathematical 
+        # pixel-level comparison using OpenCV ORB Feature Matching and Histogram Correlation.
+        try:
+            import cv2
+            import numpy as np
+            
+            img1 = cv2.imread(original_image_path, cv2.IMREAD_GRAYSCALE)
+            img2 = cv2.imread(temp_img_path, cv2.IMREAD_GRAYSCALE)
+            
+            # Detect and crop faces
+            cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+            face_cascade = cv2.CascadeClassifier(cascade_path)
+            
+            faces1 = face_cascade.detectMultiScale(img1, scaleFactor=1.1, minNeighbors=4)
+            faces2 = face_cascade.detectMultiScale(img2, scaleFactor=1.1, minNeighbors=4)
+            
+            if len(faces1) > 0 and len(faces2) > 0:
+                x,y,w,h = faces1[0]
+                face1 = img1[y:y+h, x:x+w]
+                
+                x,y,w,h = faces2[0]
+                face2 = img2[y:y+h, x:x+w]
+                
+                # Standardize size for comparison
+                face1 = cv2.resize(face1, (200, 200))
+                face2 = cv2.resize(face2, (200, 200))
+                
+                # 1. Histogram Correlation (Color/Lighting Distribution)
+                hist1 = cv2.calcHist([face1], [0], None, [256], [0, 256])
+                hist2 = cv2.calcHist([face2], [0], None, [256], [0, 256])
+                cv2.normalize(hist1, hist1, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+                cv2.normalize(hist2, hist2, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+                correlation = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
+                
+                # 2. ORB Feature Matching (Structural/Geometric Features)
+                orb = cv2.ORB_create()
+                kp1, des1 = orb.detectAndCompute(face1, None)
+                kp2, des2 = orb.detectAndCompute(face2, None)
+                
+                orb_distance = 1.0
+                if des1 is not None and des2 is not None:
+                    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+                    matches = bf.match(des1, des2)
+                    if len(matches) > 0:
+                        matches = sorted(matches, key=lambda x: x.distance)
+                        good_matches = matches[:50]
+                        avg_dist = sum(m.distance for m in good_matches) / len(good_matches)
+                        # Map ORB Hamming distance (0-100) to 0.0-1.0
+                        orb_distance = max(0.0, min(1.0, (avg_dist - 20) / 60.0))
+                
+                # Combine Correlation (higher is better, 1.0 is max) and ORB distance (lower is better, 0.0 is max)
+                # Map correlation to distance (0.0 distance = 1.0 correlation)
+                hist_distance = 1.0 - max(0.0, correlation)
+                
+                # Weighted final distance (ORB is better for structural facial features)
+                final_distance = (orb_distance * 0.7) + (hist_distance * 0.3)
+                
+                print(f"[Lightweight Bio] {candidate_title} | ORB: {orb_distance:.2f} | Hist: {hist_distance:.2f} | Final: {final_distance:.2f}")
+                return float(final_distance)
+                
+        except Exception as e:
+            print(f"[VisionNode] Lightweight Biometrics failed: {e}")
+            
+        # Absolute Worst-Case Fallback: If both DeepFace AND OpenCV fail, heavily penalize.
         url_hash = int(hashlib.md5(candidate_image_url.encode()).hexdigest()[:8], 16)
-        
-        # MOCK distances based on TITLE and LINK matching the extracted_identity 
-        # (cosine distance: lower is better, < 0.68 is a match -> maps to >80%)
-        
-        if extracted_identity and extracted_identity.lower() in candidate_title:
-            if consensus_count >= 2:
-                # Strong consensus: Multiple candidates have this name. It's a celebrity/well-known person.
-                # Guaranteed match (Mock Distance 0.15 - 0.29 -> 95%+ Score)
-                return float((url_hash % 15) / 100.0 + 0.15) 
-            else:
-                # Low consensus: Only 1 candidate has this name. Likely a lookalike for a "less data" person.
-                # Cap the confidence by returning a mediocre distance (0.55 - 0.65 -> 40-60% Score)
-                return float((url_hash % 10) / 100.0 + 0.55)
-            
-        if "fail" in candidate_link or "conference" in candidate_title:
-            return float((url_hash % 20) / 100.0 + 0.60) # 0.60 - 0.79 (Borderline/Partial lookalike)
-            
-        # For completely random/generic images that failed, give them a TERRIBLE distance so they don't win.
-        return float((url_hash % 20) / 100.0 + 0.80) # 0.80 - 0.99 (Definite mismatch)
+        return float((url_hash % 20) / 100.0 + 0.80)
